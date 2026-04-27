@@ -1,4 +1,5 @@
 <?php
+// 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -7,6 +8,7 @@ function log_error($error_code, $error_message){
     require('database.php');
 
     $error_time = date('Y-m-d H:i:s');
+    // 
     
     // $error_code = mysqli_real_escape_string($connection, $error_code);
     // $error_message = mysqli_real_escape_string($connection, $error_message);
@@ -25,6 +27,18 @@ function log_error($error_code, $error_message){
         mysqli_stmt_close($stmt);
     }
     mysqli_close($connection);
+}
+
+function practice_prepare_stmt($var, $var2, $var3){
+    require_once('database.php');
+    // Just to practice prepare stmt
+    $query = 
+    "INSERT INTO `error_logs` (error_code, error_message, error_time)
+    VALUES (?, ?, ?)";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, 'sss', $var, $var2, $var3);
+    mysqli_stmt_execute($stmt);
 }
 
 // We do some error here: 
@@ -52,17 +66,17 @@ if($divisionByZeroOccurred){
 
 echo "<h3>Undefined Variable Check</h3>";
 if (isset($some_undefined_variable)) {
- echo $some_undefined_variable;
+    echo $some_undefined_variable;
 } 
 else {
- echo "Notice: 'some_undefined_variable' is not defined. Make sure all variables are declared before use.<br>";
- $error_message = "Detected an undefined variable in the code.";
- log_error('E_UNDEFINED_VAR', $error_message);
- echo "<p>Logged undefined variable notice to the database successfully.</p>";
+    echo "Notice: 'some_undefined_variable' is not defined. Make sure all variables are declared before use.<br>";
+    $error_message = "Detected an undefined variable in the code.";
+    log_error('E_UNDEFINED_VAR', $error_message);
+    echo "<p>Logged undefined variable notice to the database successfully.</p>";
 }
 
 mysqli_close($connection);
-echo '<br>End of Script';
+echo '<br>End of Script'; 
 
 
 ?>
