@@ -26,6 +26,32 @@ function logErrorToDb($error_code, $error_msg){
     }
 }
 
+/**
+ * Basically we have 2 -> Error and Exception
+ * 
+ * customErrorHandler(errno, errstr, errfile, errline){
+ *      error_log(msg, 3, file)
+ * }
+ * set_error_handler("customErrorHandler")
+ * 
+ * customExceptionHandler(exception){
+ *      exception -> getMessage()
+ *      exception -> getFile(), getLine, getCode()
+ *      error_log(msg, 3, file)
+ * }
+ * set_exception_handler("customExceptionHandler")
+ * 
+ * In both, we can log error to db using prepare stmt: 
+ * logerrordb(){
+ *      query = insert into xx (a, b) values (?, ?)
+ * 
+ *      stmt = mysqli_prepare(connection, query)
+ *      mysqli_stmt_bind_param(stmt, 'ss/ii/dd/bb', 'a1', 'b1')
+ *      mysqli_stmt_execute(stmt)
+ * 
+ *      mysqli_stmt_close()
+ * }
+ */
 
 function customErrorHandler($errno, $errstr, $errfile, $errline){
     // we use two built in function in PHP: 
@@ -64,7 +90,5 @@ function customExceptionHandler($exception) {
  logErrorToDB("EXCEPTION", $exceptionMessage);
 }
 set_exception_handler("customExceptionHandler");
-
-
 
 ?>
