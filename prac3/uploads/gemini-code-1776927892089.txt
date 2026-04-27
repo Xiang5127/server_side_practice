@@ -1,0 +1,49 @@
+Act as a Senior Machine Learning Engineer. I need to build a custom Siamese Network pipeline in TensorFlow/Keras for an Image Verification Proof of Concept. 
+
+Our goal is to verify if two photos of terrace houses belong to the exact same physical building. I have a dataset of 55 unique houses, with 5 photos per house. 
+
+Please generate the necessary Python scripts to execute the following 5 phases. Adhere strictly to the architectural constraints provided below.
+
+### DIRECTORY STRUCTURE
+Assume my workspace looks like this:
+/gdex_siamese
+  /dataset
+    /wl_house_01 (contains 5 images)
+    /wl_house_02 (contains 5 images)
+    ...
+  (Your generated scripts will go in the root directory)
+
+### PHASE 1: PAIR GENERATOR (generate_pairs.py)
+Write a script that reads the `dataset/` directory and creates a balanced list of image pairs `[Path_A, Path_B, Label]`.
+- Positive pairs (Label 1): Two random, different photos from the SAME folder.
+- Negative pairs (Label 0): Two random photos from DIFFERENT folders.
+- Ensure the final output is evenly balanced between 1s and 0s.
+
+### PHASE 2: DATA PIPELINE (data_pipeline.py)
+Write a function using `tf.data.Dataset` to handle memory-efficient loading.
+- Input: The lists from Phase 1.
+- Preprocessing: Read file, decode JPEG, resize to (224, 224), and normalize pixels by dividing by 255.0 (tf.float32).
+- Batching: Shuffle the dataset and batch it (batch_size=16), using tf.data.AUTOTUNE for prefetching.
+- The pipeline must output a dictionary matching the model's input names: `{"reference_image": img_a, "live_image": img_b}` and the label.
+
+### PHASE 3: MODEL ARCHITECTURE (siamese_model.py)
+Do NOT use `Sequential` for the master model. Use the Keras Functional API.
+- Backbone: `MobileNetV2` (weights='imagenet', include_top=False). Set `trainable = False`.
+- DNA Extractor: Pass the backbone output through `GlobalAveragePooling2D`, then a `Dense(128)` layer, and finally apply `tf.math.l2_normalize` on axis 1. This is the "Embedding Model".
+- Twins: Create two inputs, `reference_image` and `live_image`. Pass both through the exact same Embedding Model.
+- Distance Layer: Write a custom `tf.keras.layers.Layer` that calculates the Euclidean distance between the two 128-D vectors: sqrt(sum((A - B)^2)).
+- Master Model: Takes the two images as inputs and outputs the distance.
+
+### PHASE 4: TRAINING SCRIPT (train.py)
+- Loss Function: Write a custom `contrastive_loss` function from scratch (DO NOT use TensorFlow Addons). 
+  - Formula: Y * D^2 + (1 - Y) * max(margin - D, 0)^2. Set margin=1.0.
+- Optimizer: Adam (learning_rate=0.001).
+- Execution: Connect the Phase 2 `tf.data` pipeline to `model.fit()` and train for 15 epochs. 
+
+### PHASE 5: EXPORT TFLITE (export.py)
+After training, extract ONLY the "Embedding Model" (the single branch that outputs the 128-D vector, NOT the master twin model).
+- Convert it to a `.tflite` file using `tf.lite.TFLiteConverter`.
+- Apply default optimizations (8-bit quantization).
+- Save as `building_dna_extractor.tflite`.
+
+Please output the code clearly, either as separate well-named files or one modular master script. No boilerplate explanations needed, just the production-ready code.
